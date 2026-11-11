@@ -66,3 +66,29 @@ describe('groupDuplicates', () => {
     expect(g).toEqual(expect.arrayContaining([['A', 'B', 'C'], ['X', 'Y']]));
   });
 });
+
+describe('cas constatés sur l\'export réel', () => {
+  it('rapproche « chatbot » et « assistant conversationnel »', () => {
+    const p = findDuplicates([
+      makeIdea('A', 'Assistant IA pour les questions RH', "Un assistant conversationnel sur l'intranet qui répond aux questions courantes des salariés : congés, mutuelle."),
+      makeIdea('B', 'Chatbot RH', 'Un robot qui répond aux questions des salariés sur la paie et les congés.'),
+      ...ideas.slice(4),
+    ]);
+    expect(p.map((x) => `${x.a}-${x.b}`)).toContain('A-B');
+  });
+
+  it('rapproche « dictée des comptes rendus » et « dicter le rapport »', () => {
+    const p = findDuplicates([
+      makeIdea('A', "Copilote IA pour les rapports d'intervention", "Les techniciens dictent leurs constats sur smartphone et une IA rédige le rapport d'intervention."),
+      makeIdea('B', 'Dictée vocale des comptes rendus', "Pouvoir dicter son compte rendu d'intervention au lieu de le taper sur la tablette."),
+      ...ideas.slice(4),
+    ]);
+    expect(p.map((x) => `${x.a}-${x.b}`)).toContain('A-B');
+  });
+
+  it("marque comme identique une idée déposée deux fois", () => {
+    const [p] = findDuplicates([ideas[0], { ...ideas[0], id: 'A2' }]);
+    expect(p.identique).toBe(true);
+    expect(findDuplicates(ideas).every((x) => !x.identique)).toBe(true);
+  });
+});

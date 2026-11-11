@@ -104,6 +104,12 @@ export function parseIdeasCsv(text: string): ImportResult {
     const dateBrute = get(row, 'date_depot');
     const dateDepot = parseDate(dateBrute);
     if (dateBrute && !dateDepot) warnings.push({ ligne, message: `Date illisible : « ${dateBrute} ».` });
+    for (const [col, label] of [['direction', 'Direction'], ['site', 'Site'], ['theme', 'Thème']] as const) {
+      if (map[col] && !get(row, col)) warnings.push({ ligne, message: `${id} : ${label.toLowerCase()} non renseigné${col === 'direction' ? 'e' : ''}.` });
+    }
+    if (looksEnglish(`${titre} ${description}`)) {
+      warnings.push({ ligne, message: `${id} : idée rédigée en anglais, à garder en tête pour la notation et la shortlist.` });
+    }
     const budgetBrut = get(row, 'budget_estime');
     rawIdeas.push({
       id,
@@ -144,6 +150,16 @@ export function parseIdeasCsv(text: string): ImportResult {
   }
 
   return { ideas, warnings };
+}
+
+const EN = new Set(['the', 'of', 'to', 'and', 'for', 'with', 'under', 'find', 'build', 'one', 'our', 'is', 'are', 'this']);
+const FR = new Set(['le', 'la', 'les', 'de', 'des', 'du', 'et', 'pour', 'avec', 'un', 'une', 'sur', 'dans', 'est']);
+
+/** Détection simple : davantage de mots-outils anglais que français. */
+export function looksEnglish(text: string): boolean {
+  const ws = normalizeText(text).split(/[^a-z]+/);
+  const en = ws.filter((w) => EN.has(w)).length;
+  return en >= 3 && en > ws.filter((w) => FR.has(w)).length;
 }
 
 function fieldLabel(f: 'direction' | 'site' | 'theme'): string {

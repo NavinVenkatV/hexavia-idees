@@ -21,8 +21,23 @@ export function stem(word: string): string {
   return w;
 }
 
+/**
+ * Vocabulaire métier : deux salariés décrivent la même chose avec des mots différents
+ * (« chatbot » / « assistant conversationnel », « dictée » / « dicter »). Constaté sur l'export réel.
+ */
+const SYNONYMES: [RegExp, string][] = [
+  [/\bcomptes? rendus?\b/g, 'rapport'],
+  [/\b(chatbot|robot conversationnel|assistant conversationnel|agent conversationnel)\b/g, 'assistant'],
+  [/\bun robot qui repond\b/g, 'un assistant qui repond'],
+  [/\b(dictee|dictees|dicter|dictent|dicte|dictes)\b/g, 'dicter'],
+  [/\bappli\b/g, 'application'],
+  [/\b(smartphone|portable)\b/g, 'telephone'],
+];
+
 export function tokenize(text: string): string[] {
-  return normalizeText(text)
+  let t = normalizeText(text);
+  for (const [re, rep] of SYNONYMES) t = t.replace(re, rep);
+  return t
     .split(/[^a-z0-9]+/)
     .filter((w) => w.length > 2 && !STOPWORDS.has(w) && !/^\d+$/.test(w))
     .map(stem);
@@ -35,13 +50,18 @@ export interface DuplicatePair {
   score: number;
   /** Mots communs les plus parlants, pour expliquer le rapprochement à Camille. */
   motsCommuns: string[];
+  /** Titre et description identiques (idée déposée deux fois). */
+  identique?: boolean;
 }
+
+/** Réglé sur l'export réel d'Hexavia : vrais doublons ≥ 0,34, premier faux positif à 0,21. */
+export const SEUIL_DOUBLONS = 0.3;
 
 /**
  * Repère les paires d'idées proches : similarité cosinus TF-IDF sur titre (compté double)
  * + description. Le TF-IDF donne moins de poids aux mots présents dans toutes les idées.
  */
-export function findDuplicates(ideas: Idea[], seuil = 0.3): DuplicatePair[] {
+export function findDuplicates(ideas: Idea[], seuil = SEUIL_DOUBLONS): DuplicatePair[] {
   const docs = ideas.map((i) => {
     const titre = tokenize(i.titre);
     return [...titre, ...titre, ...tokenize(i.description)];
@@ -80,11 +100,14 @@ export function findDuplicates(ideas: Idea[], seuil = 0.3): DuplicatePair[] {
           shared.push([t, w * w2]);
         }
       }
-      if (score >= seuil) {
+      const same = (i: Idea) => normalizeText(`${i.titre} ${i.description}`);
+      const identique = same(ideas[x]) === same(ideas[y]) && same(ideas[x]) !== '';
+      if (score >= seuil || identique) {
         pairs.push({
+          identique,
           a: ideas[x].id,
           b: ideas[y].id,
-          score: Math.round(score * 100) / 100,
+          score: identique ? 1 : Math.round(score * 100) / 100,
           motsCommuns: shared.sort((p, q) => q[1] - p[1]).slice(0, 5).map(([t]) => display.get(t) ?? t),
         });
       }

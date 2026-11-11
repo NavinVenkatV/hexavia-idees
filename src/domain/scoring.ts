@@ -90,7 +90,13 @@ Réponds en français.`;
 // ---------------------------------------------------------------------------
 
 const clamp = (n: number) => Math.max(1, Math.min(5, Math.round(n)));
-const has = (text: string, words: string[]) => words.filter((w) => text.includes(w));
+/**
+ * Mots-clés cherchés en début de mot (« commande » ne doit pas trouver « recommander »,
+ * ni « eau » trouver « nouveaux »). Un mot-clé terminé par une espace doit être un mot entier.
+ */
+const has = (text: string, words: string[]) =>
+  words.filter((w) => (w.endsWith(' ') ? text.includes(` ${w.trim()} `) : text.includes(` ${w}`)));
+const words = (s: string) => ` ${normalizeText(s).replace(/[^a-z0-9]+/g, ' ')} `;
 
 /** Mot-clé recherché (sans accents) → libellé affiché dans la justification. */
 const ENJEUX: Record<string, string> = {
@@ -100,7 +106,7 @@ const ENJEUX: Record<string, string> = {
 };
 const COMPLEXE = ['intelligence artificielle', ' ia ', 'jumeau numerique', 'blockchain', 'robot', 'erp', 'refonte', 'plateforme', 'algorithme', 'cobot'];
 const TECHNO = ['capteur', ' ia ', 'intelligence artificielle', 'numerique', 'automatis', 'connecte', 'donnees', 'algorithme', 'impression 3d', 'robot', 'cobot', 'jumeau', 'realite', 'drone'];
-const NOUVEAUTE = ['premier', 'nouveau', 'jamais', 'inedit', 'innovant', 'unique', 'brevet'];
+const NOUVEAUTE = ['premier', 'jamais', 'inedit', 'innovant', 'brevet', 'experiment', 'tester', 'pilote'];
 
 function extrait(s: string, max = 70): string {
   const t = s.replace(/\s+/g, ' ').trim();
@@ -108,15 +114,26 @@ function extrait(s: string, max = 70): string {
 }
 
 export function simulateProposal(idea: Idea, config: ChallengeConfig, now = new Date()): AiProposal {
-  const texte = ` ${normalizeText(`${idea.titre} ${idea.description} ${idea.benefices}`)} `;
+  const texte = words(`${idea.titre} ${idea.description} ${idea.benefices}`);
   const benef = normalizeText(idea.benefices);
-  const chiffre = idea.benefices.match(/[^.;\n]*\d+\s*(%|€|k€|h\b|heures?|jours?|semaines?|tonnes?|t\b|minutes?)[^.;\n]*/i);
+  const chiffre =
+    idea.benefices.match(/[^.;,\n]*\d+\s*(%|€|k€|h\b|heures?|jours?|semaines?|tonnes?|t\b|minutes?|mwh|postes?)[^.;,\n]*/i) ??
+    idea.benefices.match(/[^.;,\n]*(divis\p{L}* par|doubl\p{L}*|moitié|poste et demi)[^.;,\n]*/iu);
+  const constat = idea.description.match(/[^.;:\n]*\d+\s*(%|minutes?|heures?|jours?|mails?|personnes?|mètres?|tonnes?|fournisseurs?)[^.;:\n]*/i);
+  const vague = !!benef && !chiffre && benef.length < 25;
 
   // Impact
   const enjeux = [...new Set(has(texte, Object.keys(ENJEUX)).map((k) => ENJEUX[k]))];
-  let impact = 2 + (chiffre ? 1 : 0) + Math.min(2, enjeux.length * 0.75) - (benef ? 0 : 1);
+  let impact = 2 + (chiffre ? 1 : 0) + (constat ? 0.5 : 0) + Math.min(1.5, enjeux.length * 0.75) - (benef ? 0 : 1) - (vague ? 0.5 : 0);
   const jImpact = [
-    chiffre ? `Bénéfice chiffré : « ${extrait(chiffre[0])} ».` : benef ? 'Bénéfices annoncés mais non chiffrés.' : 'Aucun bénéfice renseigné : impact difficile à apprécier.',
+    chiffre
+      ? `Bénéfice chiffré : « ${extrait(chiffre[0])} ».`
+      : vague
+        ? `Bénéfice très général (« ${extrait(idea.benefices, 40)} ») et non chiffré.`
+        : benef
+          ? 'Bénéfices annoncés mais non chiffrés.'
+          : 'Aucun bénéfice renseigné : impact difficile à apprécier.',
+    constat ? `Part d'un constat mesuré : « ${extrait(constat[0])} ».` : '',
     enjeux.length ? `Touche à des enjeux clés : ${enjeux.slice(0, 3).join(', ')}.` : '',
   ].filter(Boolean).join(' ');
 
@@ -131,7 +148,7 @@ export function simulateProposal(idea: Idea, config: ChallengeConfig, now = new 
   ].filter(Boolean).join(' ');
 
   // Alignement
-  const axes = config.axesStrategiques.filter((a) => a.motsCles.some((m) => texte.includes(m)));
+  const axes = config.axesStrategiques.filter((a) => has(texte, a.motsCles).length > 0);
   const align = axes.length === 0 ? 2 : axes.length === 1 ? 3 : axes.length === 2 ? 4 : 5;
   const jAlign = axes.length
     ? `Rejoint ${axes.length > 1 ? 'les axes' : "l'axe"} : ${axes.map((a) => a.label).join(', ')}.`
@@ -139,7 +156,7 @@ export function simulateProposal(idea: Idea, config: ChallengeConfig, now = new 
 
   // Innovation
   const techno = has(texte, TECHNO);
-  const nouveau = has(texte, NOUVEAUTE);
+  const nouveau = has(words(`${idea.titre} ${idea.description}`), NOUVEAUTE);
   let innov = 2 + (techno.length ? 1 : 0) + (nouveau.length ? 1 : 0) + (idea.description.length > 250 ? 0.5 : 0) - (idea.description.length < 60 ? 1 : 0);
   const jInnov = [
     techno.length ? `S'appuie sur des technologies récentes (${[...new Set(techno.map((t) => t.trim()))].slice(0, 3).join(', ')}).` : 'Amélioration plutôt incrémentale.',

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { decodeFile, ImportError, parseIdeasCsv } from './csv';
+import { decodeFile, ImportError, looksEnglish, parseIdeasCsv } from './csv';
 import { canonicalizeLabels, parseBudget, parseDate } from './normalize';
 
 const fixture = readFileSync(join(__dirname, '__fixtures__/idees_test.csv'));
@@ -98,4 +98,22 @@ describe('import du CSV', () => {
     expect(() => parseIdeasCsv('')).toThrow(ImportError);
     expect(() => parseIdeasCsv('nom;prenom\nA;B')).toThrow(/Colonnes introuvables : titre, description/);
   });
+});
+
+describe('signalements utiles à Camille', () => {
+  it('signale thème, site ou direction manquants', () => {
+    const { warnings } = parseIdeasCsv('id;direction;site;theme;titre;description\nIDEA-015;Production;Grenoble;;Café gratuit;Rendre le café gratuit.');
+    expect(warnings.map((w) => w.message)).toContain('IDEA-015 : thème non renseigné.');
+  });
+
+  it("repère une idée rédigée en anglais, pas une idée française", () => {
+    expect(looksEnglish('Digital twin of the heat treatment line to simulate energy consumption under different production schedules')).toBe(true);
+    expect(looksEnglish("Créer un jumeau numérique de la ligne pour simuler la consommation d'énergie")).toBe(false);
+    expect(looksEnglish('Kanban digital')).toBe(false);
+  });
+});
+
+it('accorde le message : site non renseigné, direction non renseignée', () => {
+  const { warnings } = parseIdeasCsv('id;direction;site;titre;description\nX;;;T;D');
+  expect(warnings.map((w) => w.message)).toEqual(['X : direction non renseignée.', 'X : site non renseigné.']);
 });

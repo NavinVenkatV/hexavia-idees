@@ -4,7 +4,8 @@ import type { Idea } from '../domain/types';
 import type { AppState, Action } from '../state/store';
 import { Empty, Highlight } from './ui';
 
-function proximite(score: number): { label: string; cls: string } {
+function proximite(score: number, identique?: boolean): { label: string; cls: string } {
+  if (identique) return { label: 'Identiques : déposée deux fois', cls: 'badge-warn' };
   if (score >= 0.6) return { label: 'Très proches', cls: 'badge-warn' };
   if (score >= 0.4) return { label: 'Proches', cls: 'badge-ai' };
   return { label: 'À vérifier', cls: 'badge-todo' };
@@ -74,7 +75,7 @@ export function DuplicatesScreen({ state, dispatch }: { state: AppState; dispatc
 }
 
 function PairCard({ pair, a, b, state, dispatch }: { pair: DuplicatePair; a: Idea; b: Idea; state: AppState; dispatch: (x: Action) => void }) {
-  const prox = proximite(pair.score);
+  const prox = proximite(pair.score, pair.identique);
   const side = (i: Idea) => (
     <div className="pair-side">
       <div className="row wrap" style={{ marginBottom: 4 }}>

@@ -114,3 +114,22 @@ describe('shortlist', () => {
     expect(s.nonNotees.map((i) => i.id)).toEqual(['Z']);
   });
 });
+
+describe('cas constatés sur l\'export réel', () => {
+  it('« nouveaux » ne déclenche pas l\'axe décarbonation (mot-clé « eau »), ni « recommander » l\'axe client', () => {
+    const idea = makeIdea('X', 'Programme ambassadeurs', 'Proposer de nous recommander en échange d\'avantages.', { benefices: 'Nouveaux clients' });
+    const p = simulateProposal(idea, CONFIG_HEXAVIA);
+    expect(p.justifications.alignement).not.toMatch(/Décarbonation/);
+    expect(p.justifications.alignement).toMatch(/Satisfaction client/); // via « clients »
+    expect(p.justifications.innovation).toMatch(/incrémentale/);
+    expect(p.justifications.impact).toMatch(/très général/);
+  });
+
+  it('valorise un constat mesuré et un bénéfice exprimé en mots (« divisé par deux »)', () => {
+    const idea = makeIdea('Y', 'Îlots', "J'ai mesuré sur une semaine : 60 % du temps de passage est de l'attente.", { benefices: 'Temps de passage divisé par deux' });
+    const p = simulateProposal(idea, CONFIG_HEXAVIA);
+    expect(p.justifications.impact).toMatch(/Bénéfice chiffré : « Temps de passage divisé par deux »/);
+    expect(p.justifications.impact).toMatch(/constat mesuré/);
+    expect(p.notes.impact).toBeGreaterThanOrEqual(4);
+  });
+});

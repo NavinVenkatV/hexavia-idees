@@ -20,7 +20,7 @@ export const CONFIG_HEXAVIA: ChallengeConfig = {
   axesStrategiques: [
     {
       label: 'Décarbonation et sobriété',
-      motsCles: ['co2', 'carbone', 'energie', 'energetique', 'emission', 'dechet', 'recycl', 'eau', 'sobriete', 'solaire', 'electrique', 'environnement', 'climat'],
+      motsCles: ['co2', 'carbone', 'energie', 'energetique', 'emission', 'dechet', 'recycl', 'eau', 'sobriete', 'solaire', 'photovolta', 'chaleur', 'chauff', 'gaz', 'electrique', 'environnement', 'climat'],
     },
     {
       label: 'Sécurité au travail',
