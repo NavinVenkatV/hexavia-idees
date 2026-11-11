@@ -1,122 +1,70 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import { AI_MODE } from './ai/propose';
+import { pairKey } from './domain/duplicates';
+import { computeShortlist } from './domain/shortlist';
+import { DuplicatesScreen } from './components/DuplicatesScreen';
+import { IdeasScreen } from './components/IdeasScreen';
+import { ImportScreen } from './components/ImportScreen';
+import { ShortlistScreen } from './components/ShortlistScreen';
+import { useAppState } from './state/store';
 
-function App() {
-  const [count, setCount] = useState(0)
+type Tab = 'idees' | 'doublons' | 'shortlist';
+
+export default function App() {
+  const [state, dispatch] = useAppState();
+  const [tab, setTab] = useState<Tab>('idees');
+  const hasData = state.ideas.length > 0;
+
+  const doublonsEnAttente = state.paires.filter((p) => !state.decisions[pairKey(p.a, p.b)]).length;
+  const retenues = hasData ? computeShortlist(state.ideas, state.evaluations, state, state.config).retenues.length : 0;
+
+  function nouveauFichier() {
+    if (window.confirm('Importer un nouveau fichier ? Les notes et décisions actuelles seront effacées de cet ordinateur.')) {
+      dispatch({ type: 'reset' });
+      setTab('idees');
+    }
+  }
 
   return (
     <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+      <header className="app-header no-print">
+        <div className="brand">
+          <div className="brand-mark" aria-hidden>P</div>
+          <div>
+            <h1>Pépite</h1>
+            <div className="tiny">{state.config.nom}</div>
+          </div>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+        {hasData && (
+          <nav className="tabs" role="tablist" aria-label="Étapes">
+            <button className="tab" role="tab" aria-selected={tab === 'idees'} onClick={() => setTab('idees')}>
+              1. Idées <span className="count">{state.ideas.length}</span>
+            </button>
+            <button className="tab" role="tab" aria-selected={tab === 'doublons'} onClick={() => setTab('doublons')}>
+              2. Doublons {doublonsEnAttente > 0 && <span className="count alert">{doublonsEnAttente}</span>}
+            </button>
+            <button className="tab" role="tab" aria-selected={tab === 'shortlist'} onClick={() => setTab('shortlist')}>
+              3. Shortlist <span className="count">{retenues}</span>
+            </button>
+          </nav>
+        )}
+        <span className="spacer" />
+        {AI_MODE === 'simulation' && (
+          <span className="badge badge-ai hide-sm" title="Les notes proposées sont calculées dans le navigateur, sans modèle d'IA externe. Voir le README pour brancher un vrai modèle.">
+            IA : mode simulation
+          </span>
+        )}
+        {hasData && (
+          <button className="btn btn-sm" onClick={nouveauFichier}>Nouveau fichier</button>
+        )}
+      </header>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
+      <main>
+        {!hasData && <ImportScreen dispatch={dispatch} clientName={state.config.client} />}
+        {hasData && tab === 'idees' && <IdeasScreen state={state} dispatch={dispatch} />}
+        {hasData && tab === 'doublons' && <DuplicatesScreen state={state} dispatch={dispatch} />}
+        {hasData && tab === 'shortlist' && <ShortlistScreen state={state} dispatch={dispatch} goTo={setTab} />}
+      </main>
     </>
-  )
+  );
 }
-
-export default App

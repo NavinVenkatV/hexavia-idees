@@ -62,9 +62,9 @@ export function findDuplicates(ideas: Idea[], seuil = 0.3): DuplicatePair[] {
   // forme lisible d'un mot racinisé : la première occurrence dans le texte d'origine
   const display = new Map<string, string>();
   for (const i of ideas) {
-    for (const raw of normalizeText(`${i.titre} ${i.description}`).split(/[^a-z0-9]+/)) {
-      const s = stem(raw);
-      if (!display.has(s)) display.set(s, raw);
+    for (const raw of `${i.titre} ${i.description}`.split(/[^\p{L}\p{N}]+/u)) {
+      const s = stem(normalizeText(raw));
+      if (s && !display.has(s)) display.set(s, raw.toLowerCase());
     }
   }
 

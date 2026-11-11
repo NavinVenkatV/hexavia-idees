@@ -36,6 +36,7 @@ describe('findDuplicates', () => {
   it('explique le rapprochement par les mots communs', () => {
     const ab = pairs.find((p) => p.a === 'A' && p.b === 'B')!;
     expect(ab.motsCommuns).toEqual(expect.arrayContaining(['presses', 'capteurs']));
+    expect(ab.motsCommuns).toContain('prédictive');
     expect(ab.score).toBeGreaterThan(0.3);
     expect(ab.score).toBeLessThanOrEqual(1);
   });

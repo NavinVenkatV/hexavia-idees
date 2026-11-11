@@ -92,7 +92,12 @@ Réponds en français.`;
 const clamp = (n: number) => Math.max(1, Math.min(5, Math.round(n)));
 const has = (text: string, words: string[]) => words.filter((w) => text.includes(w));
 
-const ENJEUX = ['cout', 'economi', 'securite', 'accident', 'qualite', 'rebut', 'client', 'co2', 'energie', 'productivite', 'delai', 'panne', 'arret', 'temps'];
+/** Mot-clé recherché (sans accents) → libellé affiché dans la justification. */
+const ENJEUX: Record<string, string> = {
+  cout: 'coûts', economi: 'économies', securite: 'sécurité', accident: 'sécurité', qualite: 'qualité',
+  rebut: 'qualité', client: 'clients', co2: 'CO₂', energie: 'énergie', productivite: 'productivité',
+  delai: 'délais', panne: 'disponibilité des machines', arret: 'disponibilité des machines', temps: 'temps gagné',
+};
 const COMPLEXE = ['intelligence artificielle', ' ia ', 'jumeau numerique', 'blockchain', 'robot', 'erp', 'refonte', 'plateforme', 'algorithme', 'cobot'];
 const TECHNO = ['capteur', ' ia ', 'intelligence artificielle', 'numerique', 'automatis', 'connecte', 'donnees', 'algorithme', 'impression 3d', 'robot', 'cobot', 'jumeau', 'realite', 'drone'];
 const NOUVEAUTE = ['premier', 'nouveau', 'jamais', 'inedit', 'innovant', 'unique', 'brevet'];
@@ -108,11 +113,11 @@ export function simulateProposal(idea: Idea, config: ChallengeConfig, now = new 
   const chiffre = idea.benefices.match(/[^.;\n]*\d+\s*(%|€|k€|h\b|heures?|jours?|semaines?|tonnes?|t\b|minutes?)[^.;\n]*/i);
 
   // Impact
-  const enjeux = has(texte, ENJEUX);
+  const enjeux = [...new Set(has(texte, Object.keys(ENJEUX)).map((k) => ENJEUX[k]))];
   let impact = 2 + (chiffre ? 1 : 0) + Math.min(2, enjeux.length * 0.75) - (benef ? 0 : 1);
   const jImpact = [
     chiffre ? `Bénéfice chiffré : « ${extrait(chiffre[0])} ».` : benef ? 'Bénéfices annoncés mais non chiffrés.' : 'Aucun bénéfice renseigné : impact difficile à apprécier.',
-    enjeux.length ? `Touche à des enjeux clés (${[...new Set(enjeux)].slice(0, 3).join(', ')}).` : '',
+    enjeux.length ? `Touche à des enjeux clés : ${enjeux.slice(0, 3).join(', ')}.` : '',
   ].filter(Boolean).join(' ');
 
   // Faisabilité

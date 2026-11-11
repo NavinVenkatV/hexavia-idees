@@ -74,6 +74,7 @@ describe('simulation du modèle', () => {
     expect(p.notes.faisabilite).toBe(1);
     expect(p.justifications.faisabilite).toMatch(/2\s000\s000/);
     expect(simulateProposal(faible, CONFIG_HEXAVIA).justifications.impact).toMatch(/Aucun bénéfice/);
+    expect(simulateProposal(forte, CONFIG_HEXAVIA).justifications.impact).toContain('disponibilité des machines');
   });
 });
 
