@@ -1,0 +1,9 @@
+﻿id;date_depot;prenom;nom;direction;site;theme;titre;description;benefices_attendus;budget_estime
+IDEA-001;2026-09-02;Lina;Martin;Production;Lyon;Excellence opérationnelle;Capteurs de vibration sur les presses;"Installer des capteurs de vibration connectés sur les presses pour détecter les pannes avant qu'elles arrivent; maintenance prédictive.";Réduire les arrêts non planifiés de 30 %;45 000 €
+IDEA-002;03/09/2026;Hugo;Bernard;production ;Lyon;excellence opérationnelle;Maintenance prédictive des presses;"Mettre des capteurs connectés sur les presses afin de prévoir les pannes (maintenance prédictive).
+Les alertes iraient au chef d'équipe.";Moins d'arrêts machine;entre 30 et 50 k€
+IDEA-003;12 septembre 2026;Sara;Petit;RH;Paris;Qualité de vie au travail;Covoiturage entre collègues;Une application interne pour organiser le covoiturage entre salariés du même site.;Baisse des émissions CO2 et des frais de transport;non estimé
+;2026-09-15;Paul;Roux;Achats;Paris;Achats responsables;Catalogue de fournisseurs locaux;Référencer les fournisseurs à moins de 200 km pour les petites pièces.;-15 % d'émissions transport;5k€
+
+IDEA-003;2026/09/20;Nora;Diallo;R&D;Grenoble;Innovation produit;Jumeau numérique de la ligne 2;Créer un jumeau numérique de la ligne 2 pour simuler les changements de cadence.;Gagner 2 semaines par lancement produit;1,2 M€
+IDEA-006;31/02/2026;Marc;Lefèvre;r & d;Grenoble;Innovation produit;Idée sans date valide;Une description courte.;;?
