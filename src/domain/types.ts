@@ -58,6 +58,12 @@ export interface ChallengeConfig {
   client: string;
   criteres: Criterion[];
   /** Axes stratégiques du client, utilisés pour le critère « alignement ». */
-  axesStrategiques: string[];
+  axesStrategiques: AxeStrategique[];
   tailleShortlist: number;
+}
+
+export interface AxeStrategique {
+  label: string;
+  /** Mots-clés (sans accents, en minuscules) qui rattachent une idée à cet axe. */
+  motsCles: string[];
 }
