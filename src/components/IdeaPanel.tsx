@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { formatEuros } from '../domain/normalize';
 import { finalNote, isModified, totalScore } from '../domain/scoring';
 import type { AppState, Action } from '../state/store';
@@ -19,6 +20,12 @@ interface Props {
 
 export function IdeaPanel({ state, ideaId, dispatch, onClose, onValidate, onNext, onPrev, onPropose, proposing }: Props) {
   const idea = state.ideas.find((i) => i.id === ideaId);
+  const body = useRef<HTMLDivElement>(null);
+
+  // Nouvelle idée : on repart du haut du panneau.
+  useEffect(() => {
+    body.current?.scrollTo({ top: 0 });
+  }, [ideaId]);
   const ev = state.evaluations[ideaId];
 
   useEffect(() => {
@@ -37,7 +44,8 @@ export function IdeaPanel({ state, ideaId, dispatch, onClose, onValidate, onNext
   const doublonDe = state.doublonDe[idea.id];
   const complete = total !== null;
 
-  return (
+  // Portail vers <body> : le panneau ne dépend d'aucun style de la page (animations, empilement).
+  return createPortal(
     <>
       <div className="drawer-backdrop" onClick={onClose} />
       <aside className="drawer" role="dialog" aria-modal="true" aria-label={`Idée ${idea.id}`}>
@@ -57,7 +65,7 @@ export function IdeaPanel({ state, ideaId, dispatch, onClose, onValidate, onNext
           <button className="icon-btn" onClick={onClose} aria-label="Fermer (Échap)"><Icon name="x" size={18} /></button>
         </div>
 
-        <div className="drawer-body">
+        <div className="drawer-body" ref={body}>
           <dl className="meta">
             <dt>Auteur</dt><dd>{`${idea.prenom} ${idea.nom}`.trim() || '—'}</dd>
             <dt>Direction</dt><dd>{idea.direction || '—'}{idea.site ? ` · ${idea.site}` : ''}</dd>
@@ -148,31 +156,39 @@ export function IdeaPanel({ state, ideaId, dispatch, onClose, onValidate, onNext
               onChange={(e) => dispatch({ type: 'commentaire', ideaId: idea.id, texte: e.target.value })}
             />
           </div>
+
+          <div className="panel-actions">
+            {ev?.validee ? (
+              <div className="validated-note"><Icon name="check" size={15} /> Idée validée</div>
+            ) : (
+              !complete && <div className="tiny">Notez les quatre critères pour pouvoir valider.</div>
+            )}
+            <div className="panel-actions-row">
+              <button className="btn btn-icon" onClick={onPrev ?? undefined} disabled={!onPrev} aria-label="Idée précédente" title="Idée précédente (←)"><Icon name="chevronLeft" size={18} /></button>
+              <button className="btn btn-icon" onClick={onNext ?? undefined} disabled={!onNext} aria-label="Idée suivante" title="Idée suivante (→)"><Icon name="chevronRight" size={18} /></button>
+              <span className="spacer" />
+              {ev?.validee ? (
+                <button className="btn" onClick={() => dispatch({ type: 'valider', ideaId: idea.id, validee: false })}><Icon name="undo" size={15} /> Rouvrir</button>
+              ) : (
+                <button
+                  className="btn btn-primary btn-lg"
+                  disabled={!complete}
+                  onClick={() => {
+                    dispatch({ type: 'valider', ideaId: idea.id, validee: true });
+                    onValidate(idea.titre);
+                    onNext?.();
+                  }}
+                >
+                  <Icon name="check" size={16} /> Valider{onNext ? ' et passer à la suivante' : ''}
+                </button>
+              )}
+            </div>
+            <div className="tiny hide-sm">Raccourcis : ← → pour changer d'idée, Échap pour fermer.</div>
+          </div>
         </div>
 
-        <div className="drawer-foot">
-          <button className="btn btn-icon" onClick={onPrev ?? undefined} disabled={!onPrev} aria-label="Idée précédente" title="Idée précédente (←)"><Icon name="chevronLeft" size={18} /></button>
-          <button className="btn btn-icon" onClick={onNext ?? undefined} disabled={!onNext} aria-label="Idée suivante" title="Idée suivante (→)"><Icon name="chevronRight" size={18} /></button>
-          <span className="tiny hide-sm">← → pour naviguer · Échap pour fermer</span>
-          <span className="spacer" />
-          {ev?.validee ? (
-            <button className="btn" onClick={() => dispatch({ type: 'valider', ideaId: idea.id, validee: false })}><Icon name="undo" size={15} /> Rouvrir</button>
-          ) : (
-            <button
-              className="btn btn-primary"
-              disabled={!complete}
-              title={complete ? undefined : 'Notez les quatre critères pour valider'}
-              onClick={() => {
-                dispatch({ type: 'valider', ideaId: idea.id, validee: true });
-                onValidate(idea.titre);
-                onNext?.();
-              }}
-            >
-              <Icon name="check" size={16} /> Valider{onNext ? ' et passer à la suivante' : ''}
-            </button>
-          )}
-        </div>
       </aside>
-    </>
+    </>,
+    document.body,
   );
 }

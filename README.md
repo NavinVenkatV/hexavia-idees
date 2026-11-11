@@ -76,7 +76,7 @@ Navigateur (React)                                   Vercel
 | Simulation de l'IA par règles déterministes | Le brief interdit la clé. La simulation renvoie **le même format** que le vrai modèle, validé par le même schéma Zod. Passer au modèle réel ne change rien en aval. |
 | Fonction serveur pour le vrai modèle | Une clé dans une variable `VITE_*` serait publiée dans le code du navigateur. |
 | Export par l'impression du navigateur + CSV | Aucune dépendance pour le PDF, mise en page dédiée (`@media print`). CSV avec BOM et `;` pour Excel en français. |
-| Interface : barre latérale des 3 étapes, indicateurs, panneau latéral | Camille voit à tout moment où elle en est (avancement, doublons restants, taille de la shortlist). Icônes en SVG inline et CSS sans bibliothèque : rien à maintenir. Animations courtes, désactivées si le système le demande (`prefers-reduced-motion`). Confirmations avec « Annuler » pour chaque décision. |
+| Interface : barre de navigation des 3 étapes, indicateurs, panneau de notation | Camille voit à tout moment où elle en est (avancement, doublons restants, taille de la shortlist). Le bouton « Valider » suit directement le commentaire, dans l'ordre de lecture. Icônes en SVG inline et CSS sans bibliothèque : rien à maintenir. Animations courtes, désactivées si le système le demande (`prefers-reduced-motion`). Confirmations avec « Annuler » pour chaque décision. |
 | Dépendances | `papaparse` (CSV avec guillemets et retours à la ligne), `zod` (validation des réponses du modèle), `@anthropic-ai/sdk` (côté serveur seulement). |
 
 ## 3. Construction avec l'IA
@@ -93,6 +93,7 @@ Navigateur (React)                                   Vercel
 5. *« Prends des captures de chaque écran et relis-les comme si tu étais Camille. »*
 
 **Quand l'IA s'est trompée :**
+- **Panneau enfermé dans la page.** Après la refonte, le panneau de notation ne couvrait plus l'écran et passait sous la barre de navigation. Cause : l'animation d'entrée de la page utilisait une transformation CSS, ce qui fait de la page le repère des éléments `position: fixed`. Repéré sur capture, pas par les tests. Correction : le panneau est rendu directement dans `<body>` (portail React) et l'animation de la page ne joue plus que sur l'opacité.
 - **Mots-clés cherchés au milieu des mots, révélé par l'export réel.** Les tests passaient sur mes données d'exemple. Sur le vrai fichier, « Programme ambassadeurs clients » obtenait un bon alignement stratégique : le mot-clé `eau` (décarbonation) était trouvé dans « nouv**eau**x », et `commande` dans « re**commande**r ». « Nouveaux clients » comptait aussi comme un signe d'innovation. Correction : recherche en début de mot, et un test pour chacun de ces cas. Leçon : tester sur la vraie donnée avant de faire confiance aux notes.
 - **Doublons manqués à cause du vocabulaire.** « Chatbot RH » et « Assistant IA pour les questions RH » (score 0,21), ou « dictée des comptes rendus » et « copilote IA pour les rapports » (non détectés), sont les mêmes idées formulées autrement. Correction : une petite table de synonymes métier. Le seuil a ensuite été réglé sur le fichier réel.
 - **Justifications illisibles, repérées à l'écran.** Tous les tests passaient, mais la capture du panneau affichait « Touche à des enjeux clés (panne, arret) » : les mots-clés internes, sans accents. Même défaut dans « mots en commun : predictive, connectes ». Correction : des libellés lisibles pour les enjeux, et l'affichage des mots communs à partir du texte d'origine, avec un test qui exige « prédictive ». C'est la raison de l'étape « relire les captures ».
@@ -155,7 +156,8 @@ Le premier faux positif arrive à 0,21 : le seuil est fixé à **0,30**. Toutes 
 | 02:07 | Réception de l'export réel : analyse de l'import, des doublons et du classement |
 | 02:08 | Corrections révélées par la vraie donnée (mots-clés, synonymes, idées identiques, signalements), +8 tests |
 | 02:10 | Captures sur l'export réel |
-| 02:25 | Finition de l'interface : barre latérale, indicateurs, transitions, notifications avec annulation, version mobile |
+| 02:25 | Finition de l'interface : indicateurs, transitions, notifications avec annulation, version mobile |
+| 02:40 | Barre de navigation en haut, bouton « Valider » sous le commentaire, panneau rendu hors de la page |
 
 ## 7. Suite et questions pour Camille
 

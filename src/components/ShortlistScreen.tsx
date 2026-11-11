@@ -5,7 +5,7 @@ import { finalNote } from '../domain/scoring';
 import { computeShortlist, type RankedIdea } from '../domain/shortlist';
 import type { AppState, Action } from '../state/store';
 import { Icon } from './Icon';
-import type { Tab } from './Sidebar';
+import type { Tab } from './Navbar';
 import { useToast } from './Toast';
 import { Empty, Score } from './ui';
 

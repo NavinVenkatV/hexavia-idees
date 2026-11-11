@@ -6,7 +6,7 @@ import { Icon } from './components/Icon';
 import { IdeasScreen } from './components/IdeasScreen';
 import { ImportScreen } from './components/ImportScreen';
 import { ShortlistScreen } from './components/ShortlistScreen';
-import { Footer, Sidebar, type Tab } from './components/Sidebar';
+import { Footer, Navbar, type Tab } from './components/Navbar';
 import { useAppState } from './state/store';
 
 export default function App() {
@@ -27,7 +27,7 @@ export default function App() {
 
   return (
     <div className="shell">
-      <Sidebar state={state} tab={tab} setTab={setTab} counts={counts} onNewFile={() => setConfirmReset(true)} />
+      <Navbar state={state} tab={tab} setTab={setTab} counts={counts} onNewFile={() => setConfirmReset(true)} />
 
       <div className="main-col">
         <main key={hasData ? tab : 'import'} className="page">

@@ -6,7 +6,7 @@ import { pairKey } from '../domain/duplicates';
 import type { AppState, Action } from '../state/store';
 import { Icon } from './Icon';
 import { IdeaPanel } from './IdeaPanel';
-import type { Tab } from './Sidebar';
+import type { Tab } from './Navbar';
 import { useToast } from './Toast';
 import { CriteriaBars, Empty, Score, STATUT_LABEL, StatutBadge, statutOf, type Statut } from './ui';
 
