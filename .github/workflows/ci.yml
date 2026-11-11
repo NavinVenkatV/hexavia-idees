@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Aucun secret ni export réel dans le dépôt
+        run: |
+          if git grep -nE 'sk-ant-[A-Za-z0-9_-]{10,}' -- . ':!*.md'; then echo "Clé API trouvée dans le dépôt"; exit 1; fi
+          if git ls-files | grep -E '\.csv$' | grep -v '__fixtures__'; then echo "Export CSV committé : données personnelles"; exit 1; fi
+          if git ls-files | grep -E '(^|/)\.env$'; then echo "Fichier .env committé"; exit 1; fi
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Types et build
+        run: npm run build
+
+      - name: Tests unitaires (import, notation, doublons, shortlist, export)
+        run: npm test
+
+      - name: Navigateur pour les tests de bout en bout
+        run: npx playwright install --with-deps chromium
+
+      - name: Test de bout en bout (parcours de Camille)
+        run: npm run test:e2e
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: test-results/
+          retention-days: 7
