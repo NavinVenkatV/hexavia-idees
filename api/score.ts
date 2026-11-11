@@ -10,9 +10,9 @@ import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
-import { CONFIG_HEXAVIA } from '../src/domain/config';
-import { buildPrompt, ModelOutputSchema } from '../src/domain/scoring';
-import type { Idea } from '../src/domain/types';
+import { CONFIG_HEXAVIA } from '../src/domain/config.js';
+import { buildPrompt, ModelOutputSchema } from '../src/domain/scoring.js';
+import type { Idea } from '../src/domain/types.js';
 
 const RequestSchema = z.object({
   idea: z.object({

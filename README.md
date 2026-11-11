@@ -2,7 +2,7 @@
 
 ## Aperçu
 
-**Application en ligne : https://A-COMPLETER.vercel.app** · CI : ![CI](https://github.com/NavinVenkatV/hexavia-idees/actions/workflows/ci.yml/badge.svg)
+**Application en ligne : https://hexavia-idees.vercel.app** · CI : ![CI](https://github.com/NavinVenkatV/hexavia-idees/actions/workflows/ci.yml/badge.svg)
 
 Camille importe l'export du formulaire, relit une note proposée pour chaque idée, tranche les doublons et envoie la shortlist au client.
 
@@ -93,6 +93,7 @@ Navigateur (React)                                   Vercel
 5. *« Prends des captures de chaque écran et relis-les comme si tu étais Camille. »*
 
 **Quand l'IA s'est trompée :**
+- **Fonction serveur en panne une fois en ligne.** Les tests passaient, mais `/api/score` répondait 500 sur Vercel : le projet est en modules ES et Node exige l'extension des fichiers importés (`./scoring.js`), que Vite ajoutait tout seul en local. Repéré en interrogeant l'URL après le déploiement. Correction : extensions explicites, vérifiées en recompilant la fonction comme le fait Node.
 - **Panneau enfermé dans la page.** Après la refonte, le panneau de notation ne couvrait plus l'écran et passait sous la barre de navigation. Cause : l'animation d'entrée de la page utilisait une transformation CSS, ce qui fait de la page le repère des éléments `position: fixed`. Repéré sur capture, pas par les tests. Correction : le panneau est rendu directement dans `<body>` (portail React) et l'animation de la page ne joue plus que sur l'opacité.
 - **Mots-clés cherchés au milieu des mots, révélé par l'export réel.** Les tests passaient sur mes données d'exemple. Sur le vrai fichier, « Programme ambassadeurs clients » obtenait un bon alignement stratégique : le mot-clé `eau` (décarbonation) était trouvé dans « nouv**eau**x », et `commande` dans « re**commande**r ». « Nouveaux clients » comptait aussi comme un signe d'innovation. Correction : recherche en début de mot, et un test pour chacun de ces cas. Leçon : tester sur la vraie donnée avant de faire confiance aux notes.
 - **Doublons manqués à cause du vocabulaire.** « Chatbot RH » et « Assistant IA pour les questions RH » (score 0,21), ou « dictée des comptes rendus » et « copilote IA pour les rapports » (non détectés), sont les mêmes idées formulées autrement. Correction : une petite table de synonymes métier. Le seuil a ensuite été réglé sur le fichier réel.
@@ -158,6 +159,7 @@ Le premier faux positif arrive à 0,21 : le seuil est fixé à **0,30**. Toutes 
 | 02:10 | Captures sur l'export réel |
 | 02:25 | Finition de l'interface : indicateurs, transitions, notifications avec annulation, version mobile |
 | 02:40 | Barre de navigation en haut, bouton « Valider » sous le commentaire, panneau rendu hors de la page |
+| 02:50 | Mise en ligne sur Vercel ; correction de la fonction serveur (imports ESM), vérifiée en ligne |
 
 ## 7. Suite et questions pour Camille
 

@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import type { AiProposal, ChallengeConfig, CriterionId, Evaluation, Idea } from './types';
-import { normalizeText } from './normalize';
+import type { AiProposal, ChallengeConfig, CriterionId, Evaluation, Idea } from './types.js';
+import { normalizeText } from './normalize.js';
 
 export const CRITERION_IDS: CriterionId[] = ['impact', 'faisabilite', 'alignement', 'innovation'];
 

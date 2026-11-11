@@ -1,4 +1,4 @@
-import type { ChallengeConfig, Criterion } from './types';
+import type { ChallengeConfig, Criterion } from './types.js';
 
 /** Grille d'évaluation du client (e-mail de Camille). Poids égaux par hypothèse. */
 export const CRITERES_HEXAVIA: Criterion[] = [
