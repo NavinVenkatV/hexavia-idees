@@ -25,7 +25,7 @@ await page.screenshot({ path: `${out}/2-notation.png` });
 await page.keyboard.press('Escape');
 await page.getByRole('button', { name: /^2\. Doublons/ }).click();
 await page.waitForTimeout(700);
-await page.screenshot({ path: `${out}/3-doublons.png` });
+// (capture des doublons non utilisée dans le README)
 await page.getByRole('button', { name: /^3\. Shortlist/ }).click();
 await page.waitForTimeout(700);
 await page.screenshot({ path: `${out}/4-shortlist.png` });
