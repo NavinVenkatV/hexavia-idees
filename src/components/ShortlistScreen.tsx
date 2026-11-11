@@ -4,9 +4,13 @@ import { formatEuros } from '../domain/normalize';
 import { finalNote } from '../domain/scoring';
 import { computeShortlist, type RankedIdea } from '../domain/shortlist';
 import type { AppState, Action } from '../state/store';
+import { Icon } from './Icon';
+import type { Tab } from './Sidebar';
+import { useToast } from './Toast';
 import { Empty, Score } from './ui';
 
-export function ShortlistScreen({ state, dispatch, goTo }: { state: AppState; dispatch: (a: Action) => void; goTo: (t: 'idees' | 'doublons') => void }) {
+export function ShortlistScreen({ state, dispatch, goTo }: { state: AppState; dispatch: (a: Action) => void; goTo: (t: Tab) => void }) {
+  const toast = useToast();
   const sl = computeShortlist(state.ideas, state.evaluations, state, state.config);
   const nonValidees = sl.retenues.filter((r) => !state.evaluations[r.idea.id]?.validee).length;
   const doublonsEnAttente = state.paires.filter((p) => !state.decisions[pairKey(p.a, p.b)]).length;
@@ -20,6 +24,7 @@ export function ShortlistScreen({ state, dispatch, goTo }: { state: AppState; di
     a.download = `shortlist-${state.config.client.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    toast('Fichier Excel téléchargé.');
   }
 
   const notes = (r: RankedIdea) =>
@@ -32,6 +37,7 @@ export function ShortlistScreen({ state, dispatch, goTo }: { state: AppState; di
       <div className="no-print">
         <div className="page-head">
           <div>
+            <div className="eyebrow">Étape 3 sur 3</div>
             <h2>Shortlist pour le jury</h2>
             <p className="muted lead">Classement par note globale (moyenne des 4 critères). À égalité : impact, puis alignement.</p>
           </div>
@@ -44,7 +50,7 @@ export function ShortlistScreen({ state, dispatch, goTo }: { state: AppState; di
 
         {(sl.nonNotees.length > 0 || doublonsEnAttente > 0 || nonValidees > 0) && (
           <div className="banner banner-warn">
-            <span aria-hidden>⚠️</span>
+            <span className="banner-icon"><Icon name="alert" size={16} /></span>
             <div>
               <strong>Shortlist provisoire.</strong>
               <ul className="small">
@@ -63,13 +69,13 @@ export function ShortlistScreen({ state, dispatch, goTo }: { state: AppState; di
         <div className="layout-2">
           <div className="card">
             {sl.retenues.length === 0 ? (
-              <Empty icon="🏆" title="La shortlist apparaîtra ici">
+              <Empty icon="trophy" title="La shortlist apparaîtra ici">
                 Commencez par proposer les notes dans l'onglet <button className="link" onClick={() => goTo('idees')}>Idées</button>.
               </Empty>
             ) : (
               sl.retenues.map((r, i) => (
                 <div className="sl-item" key={r.idea.id}>
-                  <div className="rank">{i + 1}</div>
+                  <div className={`rank ${i < 3 ? 'rank-top' : ''}`}>{i + 1}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="row wrap">
                       <span className="idea-title">{r.idea.titre}</span>
@@ -80,8 +86,16 @@ export function ShortlistScreen({ state, dispatch, goTo }: { state: AppState; di
                     <div className="mini-notes">{notes(r)}</div>
                   </div>
                   <Score value={r.total} />
-                  <button className="btn btn-sm btn-ghost" title="Retirer de la shortlist" onClick={() => dispatch({ type: 'forcer', ideaId: r.idea.id, valeur: r.forcee ? null : 'out' })}>
-                    Retirer
+                  <button
+                    className="icon-btn"
+                    title="Retirer de la shortlist"
+                    aria-label={`Retirer ${r.idea.titre}`}
+                    onClick={() => {
+                      dispatch({ type: 'forcer', ideaId: r.idea.id, valeur: r.forcee ? null : 'out' });
+                      toast(`« ${r.idea.titre} » retirée.`, { label: 'Annuler', run: () => dispatch({ type: 'forcer', ideaId: r.idea.id, valeur: r.forcee ? 'in' : null }) });
+                    }}
+                  >
+                    <Icon name="minus" size={16} />
                   </button>
                 </div>
               ))
@@ -91,12 +105,13 @@ export function ShortlistScreen({ state, dispatch, goTo }: { state: AppState; di
           <div className="stack">
             <div className="card card-pad stack">
               <h3>Envoyer au client</h3>
+              <p className="tiny" style={{ marginTop: -6 }}>Un document propre, avec les notes et vos commentaires.</p>
               <label className="row small" style={{ alignItems: 'flex-start' }}>
                 <input type="checkbox" checked={state.anonymiser} onChange={(e) => dispatch({ type: 'anonymiser', valeur: e.target.checked })} />
                 <span>Masquer le nom des auteurs<br /><span className="tiny">Pour un jury à l'aveugle ou une diffusion large.</span></span>
               </label>
-              <button className="btn btn-primary" disabled={!sl.retenues.length} onClick={() => window.print()}>Imprimer ou enregistrer en PDF</button>
-              <button className="btn" disabled={!sl.retenues.length} onClick={download}>Télécharger pour Excel</button>
+              <button className="btn btn-primary btn-block" disabled={!sl.retenues.length} onClick={() => window.print()}><Icon name="printer" size={16} /> Imprimer ou enregistrer en PDF</button>
+              <button className="btn btn-block" disabled={!sl.retenues.length} onClick={download}><Icon name="download" size={16} /> Télécharger pour Excel</button>
             </div>
 
             {sl.reserve.length > 0 && (
@@ -110,7 +125,7 @@ export function ShortlistScreen({ state, dispatch, goTo }: { state: AppState; di
                       <div className="tiny">{r.idea.id}</div>
                     </div>
                     <Score value={r.total} />
-                    <button className="btn btn-sm" onClick={() => dispatch({ type: 'forcer', ideaId: r.idea.id, valeur: 'in' })}>Ajouter</button>
+                    <button className="btn btn-sm" onClick={() => { dispatch({ type: 'forcer', ideaId: r.idea.id, valeur: 'in' }); toast(`« ${r.idea.titre} » ajoutée à la shortlist.`); }}><Icon name="plus" size={14} /> Ajouter</button>
                   </div>
                 ))}
               </div>

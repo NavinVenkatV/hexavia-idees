@@ -1,10 +1,25 @@
 import type { ReactNode } from 'react';
 import type { Evaluation } from '../domain/types';
+import { Icon, type IconName } from './Icon';
 
-export function Score({ value }: { value: number | null }) {
-  if (value === null) return <span className="score score-lo" title="Pas encore notée">–</span>;
+export function Score({ value, large }: { value: number | null; large?: boolean }) {
+  const size = large ? ' score-lg' : '';
+  if (value === null) return <span className={`score score-none${size}`} title="Pas encore notée">–</span>;
   const cls = value >= 3.75 ? 'score-hi' : value >= 2.75 ? 'score-mid' : 'score-lo';
-  return <span className={`score ${cls}`}>{value.toFixed(1).replace('.', ',')}</span>;
+  return <span className={`score ${cls}${size}`}>{value.toFixed(1).replace('.', ',')}</span>;
+}
+
+/** Quatre petites barres : le profil de l'idée sur la grille, lisible d'un coup d'œil. */
+export function CriteriaBars({ notes, labels }: { notes: (number | null)[]; labels: string[] }) {
+  return (
+    <span className="bars" aria-label={labels.map((l, i) => `${l} ${notes[i] ?? '–'}/5`).join(', ')}>
+      {notes.map((n, i) => (
+        <span key={i} className="bar" title={`${labels[i]} : ${n ?? '–'}/5`}>
+          <span style={{ height: `${((n ?? 0) / 5) * 100}%` }} />
+        </span>
+      ))}
+    </span>
+  );
 }
 
 export type Statut = 'a_noter' | 'proposee' | 'validee';
@@ -26,10 +41,10 @@ export function StatutBadge({ statut }: { statut: Statut }) {
   return <span className={`badge ${cls}`}>{statut === 'validee' ? '✓ ' : ''}{STATUT_LABEL[statut]}</span>;
 }
 
-export function Empty({ icon, title, children }: { icon: string; title: string; children?: ReactNode }) {
+export function Empty({ icon, title, children }: { icon: IconName; title: string; children?: ReactNode }) {
   return (
     <div className="empty">
-      <div className="empty-icon" aria-hidden>{icon}</div>
+      <div className="empty-icon"><Icon name={icon} size={22} /></div>
       <h3>{title}</h3>
       {children && <div className="muted" style={{ marginTop: 6 }}>{children}</div>}
     </div>

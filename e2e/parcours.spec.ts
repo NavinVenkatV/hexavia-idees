@@ -29,15 +29,15 @@ test('parcours de Camille : importer, noter, écarter un doublon, sortir la shor
   await expect(page.getByText(/Revenir à la proposition/)).toBeVisible();
   await page.getByRole('button', { name: /Valider/ }).click();
   await page.keyboard.press('Escape');
-  await expect(page.getByText('1 sur 6 validées')).toBeVisible();
+  await expect(page.locator('.stat-value.ok').first()).toHaveText('1/6');
 
   // Doublon
-  await page.getByRole('tab', { name: /Doublons/ }).click();
+  await page.getByRole('button', { name: /^2\. Doublons/ }).click();
   await page.getByRole('button', { name: 'Doublon : garder IDEA-001' }).click();
   await expect(page.getByText('Toutes les paires signalées ont été examinées')).toBeVisible();
 
   // Shortlist et export
-  await page.getByRole('tab', { name: /Shortlist/ }).click();
+  await page.getByRole('button', { name: /^3\. Shortlist/ }).click();
   await expect(page.locator('.sl-item')).toHaveCount(5); // 6 idées - 1 doublon
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Télécharger pour Excel' }).click();
@@ -46,5 +46,5 @@ test('parcours de Camille : importer, noter, écarter un doublon, sortir la shor
   // Les données survivent à un rechargement
   await page.reload();
   await expect(page.locator('.sl-item')).toHaveCount(0); // onglet par défaut : idées
-  await expect(page.getByText('1 sur 6 validées')).toBeVisible();
+  await expect(page.locator('.stat-value.ok').first()).toHaveText('1/6');
 });

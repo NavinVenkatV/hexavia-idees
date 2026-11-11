@@ -76,6 +76,7 @@ Navigateur (React)                                   Vercel
 | Simulation de l'IA par règles déterministes | Le brief interdit la clé. La simulation renvoie **le même format** que le vrai modèle, validé par le même schéma Zod. Passer au modèle réel ne change rien en aval. |
 | Fonction serveur pour le vrai modèle | Une clé dans une variable `VITE_*` serait publiée dans le code du navigateur. |
 | Export par l'impression du navigateur + CSV | Aucune dépendance pour le PDF, mise en page dédiée (`@media print`). CSV avec BOM et `;` pour Excel en français. |
+| Interface : barre latérale des 3 étapes, indicateurs, panneau latéral | Camille voit à tout moment où elle en est (avancement, doublons restants, taille de la shortlist). Icônes en SVG inline et CSS sans bibliothèque : rien à maintenir. Animations courtes, désactivées si le système le demande (`prefers-reduced-motion`). Confirmations avec « Annuler » pour chaque décision. |
 | Dépendances | `papaparse` (CSV avec guillemets et retours à la ligne), `zod` (validation des réponses du modèle), `@anthropic-ai/sdk` (côté serveur seulement). |
 
 ## 3. Construction avec l'IA
@@ -153,7 +154,8 @@ Le premier faux positif arrive à 0,21 : le seuil est fixé à **0,30**. Toutes 
 | 02:05 | README |
 | 02:07 | Réception de l'export réel : analyse de l'import, des doublons et du classement |
 | 02:08 | Corrections révélées par la vraie donnée (mots-clés, synonymes, idées identiques, signalements), +8 tests |
-| 02:10 | Captures sur l'export réel, mise en ligne |
+| 02:10 | Captures sur l'export réel |
+| 02:25 | Finition de l'interface : barre latérale, indicateurs, transitions, notifications avec annulation, version mobile |
 
 ## 7. Suite et questions pour Camille
 

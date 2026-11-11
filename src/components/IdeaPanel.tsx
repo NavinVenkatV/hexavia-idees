@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { formatEuros } from '../domain/normalize';
 import { finalNote, isModified, totalScore } from '../domain/scoring';
 import type { AppState, Action } from '../state/store';
+import { Icon } from './Icon';
 import { Score, StatutBadge, statutOf } from './ui';
 
 interface Props {
@@ -9,13 +10,14 @@ interface Props {
   ideaId: string;
   dispatch: (a: Action) => void;
   onClose: () => void;
+  onValidate: (titre: string) => void;
   onNext: (() => void) | null;
   onPrev: (() => void) | null;
   onPropose: () => void;
   proposing: boolean;
 }
 
-export function IdeaPanel({ state, ideaId, dispatch, onClose, onNext, onPrev, onPropose, proposing }: Props) {
+export function IdeaPanel({ state, ideaId, dispatch, onClose, onValidate, onNext, onPrev, onPropose, proposing }: Props) {
   const idea = state.ideas.find((i) => i.id === ideaId);
   const ev = state.evaluations[ideaId];
 
@@ -48,11 +50,11 @@ export function IdeaPanel({ state, ideaId, dispatch, onClose, onNext, onPrev, on
             </div>
             <h2 style={{ fontSize: '1.15rem' }}>{idea.titre}</h2>
           </div>
-          <div style={{ textAlign: 'right' }}>
+          <div className="total-box">
             <div className="tiny">Note globale</div>
-            <Score value={total} />
+            <Score value={total} large />
           </div>
-          <button className="btn btn-ghost btn-sm" onClick={onClose} aria-label="Fermer">✕</button>
+          <button className="icon-btn" onClick={onClose} aria-label="Fermer (Échap)"><Icon name="x" size={18} /></button>
         </div>
 
         <div className="drawer-body">
@@ -85,13 +87,14 @@ export function IdeaPanel({ state, ideaId, dispatch, onClose, onNext, onPrev, on
               <span className="spacer" />
               {!ev?.ai && (
                 <button className="btn btn-ai btn-sm" onClick={onPropose} disabled={proposing}>
-                  {proposing ? 'Proposition en cours…' : '✨ Proposer une note'}
+                  <Icon name="sparkles" size={14} /> {proposing ? 'Proposition en cours…' : 'Proposer une note'}
                 </button>
               )}
             </div>
             {ev?.ai && (
-              <p className="tiny">
-                En violet : la note proposée par l'IA ; en bleu : votre note{ev.ai.source === 'simulation' ? ' (mode simulation)' : ''}. Cliquez sur une autre valeur pour corriger.
+              <p className="tiny legend">
+                <span className="legend-dot ai" /> Note proposée{ev.ai.source === 'simulation' ? ' (simulation)' : ''}
+                <span className="legend-dot you" /> Votre note · cliquez sur une valeur pour corriger
               </p>
             )}
             {state.config.criteres.map((c) => {
@@ -106,7 +109,7 @@ export function IdeaPanel({ state, ideaId, dispatch, onClose, onNext, onPrev, on
                     <span className="spacer" />
                     {modified && (
                       <button className="link small" onClick={() => dispatch({ type: 'note', ideaId: idea.id, critere: c.id, note: undefined })}>
-                        Revenir à la proposition ({ai})
+                        <Icon name="undo" size={13} /> Revenir à la proposition ({ai})
                       </button>
                     )}
                   </div>
@@ -126,7 +129,8 @@ export function IdeaPanel({ state, ideaId, dispatch, onClose, onNext, onPrev, on
                   </div>
                   {ev?.ai && (
                     <div className="justif">
-                      <strong>Proposition : {ai}/5.</strong> {ev.ai.justifications[c.id]}
+                      <Icon name="sparkles" size={13} />
+                      <span><strong>Proposition : {ai}/5.</strong> {ev.ai.justifications[c.id]}</span>
                     </div>
                   )}
                 </div>
@@ -147,11 +151,12 @@ export function IdeaPanel({ state, ideaId, dispatch, onClose, onNext, onPrev, on
         </div>
 
         <div className="drawer-foot">
-          <button className="btn" onClick={onPrev ?? undefined} disabled={!onPrev} aria-label="Idée précédente">←</button>
-          <button className="btn" onClick={onNext ?? undefined} disabled={!onNext} aria-label="Idée suivante">→</button>
+          <button className="btn btn-icon" onClick={onPrev ?? undefined} disabled={!onPrev} aria-label="Idée précédente" title="Idée précédente (←)"><Icon name="chevronLeft" size={18} /></button>
+          <button className="btn btn-icon" onClick={onNext ?? undefined} disabled={!onNext} aria-label="Idée suivante" title="Idée suivante (→)"><Icon name="chevronRight" size={18} /></button>
+          <span className="tiny hide-sm">← → pour naviguer · Échap pour fermer</span>
           <span className="spacer" />
           {ev?.validee ? (
-            <button className="btn" onClick={() => dispatch({ type: 'valider', ideaId: idea.id, validee: false })}>Rouvrir</button>
+            <button className="btn" onClick={() => dispatch({ type: 'valider', ideaId: idea.id, validee: false })}><Icon name="undo" size={15} /> Rouvrir</button>
           ) : (
             <button
               className="btn btn-primary"
@@ -159,10 +164,11 @@ export function IdeaPanel({ state, ideaId, dispatch, onClose, onNext, onPrev, on
               title={complete ? undefined : 'Notez les quatre critères pour valider'}
               onClick={() => {
                 dispatch({ type: 'valider', ideaId: idea.id, validee: true });
+                onValidate(idea.titre);
                 onNext?.();
               }}
             >
-              Valider{onNext ? ' et passer à la suivante' : ''}
+              <Icon name="check" size={16} /> Valider{onNext ? ' et passer à la suivante' : ''}
             </button>
           )}
         </div>

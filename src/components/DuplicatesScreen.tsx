@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { pairKey, type DuplicatePair } from '../domain/duplicates';
 import type { Idea } from '../domain/types';
 import type { AppState, Action } from '../state/store';
+import { Icon } from './Icon';
+import { useToast } from './Toast';
 import { Empty, Highlight } from './ui';
 
 function proximite(score: number, identique?: boolean): { label: string; cls: string } {
@@ -21,6 +23,7 @@ export function DuplicatesScreen({ state, dispatch }: { state: AppState; dispatc
     <>
       <div className="page-head">
         <div>
+          <div className="eyebrow">Étape 2 sur 3</div>
           <h2>Doublons possibles</h2>
           <p className="muted lead">
             Idées dont le titre et la description se ressemblent. Vous décidez : l'idée écartée sort de la shortlist mais reste visible.
@@ -30,10 +33,10 @@ export function DuplicatesScreen({ state, dispatch }: { state: AppState; dispatc
 
       {state.paires.length === 0 ? (
         <div className="card">
-          <Empty icon="✓" title="Aucun doublon repéré">Aucune paire d'idées ne se ressemble assez pour être signalée.</Empty>
+          <Empty icon="check" title="Aucun doublon repéré">Aucune paire d'idées ne se ressemble assez pour être signalée.</Empty>
         </div>
       ) : pending.length === 0 ? (
-        <div className="banner banner-ok"><span aria-hidden>✓</span><span>Toutes les paires signalées ont été examinées.</span></div>
+        <div className="banner banner-ok"><span className="banner-icon"><Icon name="check" size={16} /></span><span>Toutes les paires signalées ont été examinées.</span></div>
       ) : (
         <p className="small muted" style={{ marginBottom: 12 }}>{pending.length} paire{pending.length > 1 ? 's' : ''} à examiner, de la plus probable à la moins probable.</p>
       )}
@@ -62,7 +65,7 @@ export function DuplicatesScreen({ state, dispatch }: { state: AppState; dispatc
                       <div className="small"><strong>{p.a}</strong> {byId.get(p.a)?.titre} · <strong>{p.b}</strong> {byId.get(p.b)?.titre}</div>
                       <div className="tiny">{decision === 'distinct' ? 'Idées différentes : les deux restent en lice.' : `Doublon : ${ecartee} écartée.`}</div>
                     </div>
-                    <button className="btn btn-sm" onClick={() => dispatch({ type: 'annulerDecision', a: p.a, b: p.b })}>Annuler</button>
+                    <button className="btn btn-sm" onClick={() => dispatch({ type: 'annulerDecision', a: p.a, b: p.b })}><Icon name="undo" size={14} /> Annuler</button>
                   </div>
                 );
               })}
@@ -75,6 +78,8 @@ export function DuplicatesScreen({ state, dispatch }: { state: AppState; dispatc
 }
 
 function PairCard({ pair, a, b, state, dispatch }: { pair: DuplicatePair; a: Idea; b: Idea; state: AppState; dispatch: (x: Action) => void }) {
+  const toast = useToast();
+  const undo = { label: 'Annuler', run: () => dispatch({ type: 'annulerDecision', a: a.id, b: b.id }) };
   const prox = proximite(pair.score, pair.identique);
   const side = (i: Idea) => (
     <div className="pair-side">
@@ -92,14 +97,25 @@ function PairCard({ pair, a, b, state, dispatch }: { pair: DuplicatePair; a: Ide
       <div className="pair-head">
         <span className={`badge ${prox.cls}`}>{prox.label}</span>
         <span className="small muted">Mots en commun : {pair.motsCommuns.join(', ')}</span>
+        <span className="spacer" />
+        <span className="similarity" title="Similarité du texte">
+          <span className="similarity-bar"><span style={{ width: `${Math.round(pair.score * 100)}%` }} /></span>
+          {Math.round(pair.score * 100)} %
+        </span>
       </div>
       {side(a)}
       {side(b)}
       <div className="pair-actions">
-        <button className="btn btn-sm" onClick={() => dispatch({ type: 'doublon', garder: a.id, ecarter: b.id })}>Doublon : garder {a.id}</button>
-        <button className="btn btn-sm" onClick={() => dispatch({ type: 'doublon', garder: b.id, ecarter: a.id })}>Doublon : garder {b.id}</button>
+        <button className="btn btn-sm" onClick={() => { dispatch({ type: 'doublon', garder: a.id, ecarter: b.id }); toast(`${b.id} écartée, ${a.id} gardée.`, undo); }}>
+          <Icon name="check" size={14} /> Doublon : garder {a.id}
+        </button>
+        <button className="btn btn-sm" onClick={() => { dispatch({ type: 'doublon', garder: b.id, ecarter: a.id }); toast(`${a.id} écartée, ${b.id} gardée.`, undo); }}>
+          <Icon name="check" size={14} /> Doublon : garder {b.id}
+        </button>
         <span className="spacer" />
-        <button className="btn btn-sm btn-ghost" onClick={() => dispatch({ type: 'distinct', a: a.id, b: b.id })}>Ce sont deux idées différentes</button>
+        <button className="btn btn-sm btn-ghost" onClick={() => { dispatch({ type: 'distinct', a: a.id, b: b.id }); toast('Les deux idées restent en lice.', undo); }}>
+          Ce sont deux idées différentes
+        </button>
       </div>
     </div>
   );
