@@ -12,14 +12,14 @@ Camille importe l'export du formulaire, relit une note proposée pour chaque id�
 | **Doublons côte à côte** | **Shortlist prête à envoyer** |
 | ![Doublons](docs/3-doublons.png) | ![Shortlist](docs/4-shortlist.png) |
 
-> Captures réalisées avec un jeu de données d'exemple. `npm run screenshots -- idees_hexavia.csv` les régénère à partir de n'importe quel export (avec `npm run preview` lancé).
+> Captures réalisées sur l'export fourni (`idees_hexavia.csv`, données fictives). `npm run screenshots -- idees_hexavia.csv docs` les régénère, avec `npm run preview` lancé.
 
 ## Lancer l'outil
 
 ```bash
 npm install
 npm run dev          # http://localhost:5173 : déposer idees_hexavia.csv
-npm test             # 72 tests unitaires (Vitest)
+npm test             # 80 tests unitaires (Vitest)
 npm run test:e2e     # parcours complet dans un vrai navigateur (Playwright)
 ```
 
@@ -38,7 +38,8 @@ Node 20 ou plus récent. Aucune variable d'environnement n'est nécessaire : l'I
 - Un doublon est écarté de la shortlist mais reste visible. Chaque décision peut être annulée.
 - La shortlist part chez le client en PDF (impression du navigateur) ou dans Excel. Les noms des auteurs peuvent être masqués.
 - Une seule personne note à la fois, sur un seul poste. Pas besoin de comptes pour la V1.
-- L'export est imparfait : encodage, en-têtes, casse des directions, dates et budgets saisis librement, identifiants manquants ou en double. Chaque correction automatique est listée à l'import.
+- L'export est imparfait : dates et budgets saisis librement, champs vides, idée déposée deux fois, idée en anglais. Rien n'est supprimé : tout est signalé à l'import, et c'est Camille qui tranche.
+- L'idée en anglais (IDEA-021) est notée comme les autres ; à elle de décider s'il faut la faire traduire pour le jury.
 
 **Dans la V1 :** import robuste avec rapport des corrections · liste filtrable (direction, thème, site, statut, recherche) · note proposée et justifiée pour chaque critère, corrigeable d'un clic · validation idée par idée avec avancement · doublons présentés par paires avec les mots communs surlignés · shortlist classée, avec ajout ou retrait manuel et réserve · export PDF et Excel · sauvegarde automatique dans le navigateur.
 
@@ -91,18 +92,32 @@ Navigateur (React)                                   Vercel
 5. *« Prends des captures de chaque écran et relis-les comme si tu étais Camille. »*
 
 **Quand l'IA s'est trompée :**
+- **Mots-clés cherchés au milieu des mots, révélé par l'export réel.** Les tests passaient sur mes données d'exemple. Sur le vrai fichier, « Programme ambassadeurs clients » obtenait un bon alignement stratégique : le mot-clé `eau` (décarbonation) était trouvé dans « nouv**eau**x », et `commande` dans « re**commande**r ». « Nouveaux clients » comptait aussi comme un signe d'innovation. Correction : recherche en début de mot, et un test pour chacun de ces cas. Leçon : tester sur la vraie donnée avant de faire confiance aux notes.
+- **Doublons manqués à cause du vocabulaire.** « Chatbot RH » et « Assistant IA pour les questions RH » (score 0,21), ou « dictée des comptes rendus » et « copilote IA pour les rapports » (non détectés), sont les mêmes idées formulées autrement. Correction : une petite table de synonymes métier. Le seuil a ensuite été réglé sur le fichier réel.
 - **Justifications illisibles, repérées à l'écran.** Tous les tests passaient, mais la capture du panneau affichait « Touche à des enjeux clés (panne, arret) » : les mots-clés internes, sans accents. Même défaut dans « mots en commun : predictive, connectes ». Correction : des libellés lisibles pour les enjeux, et l'affichage des mots communs à partir du texte d'origine, avec un test qui exige « prédictive ». C'est la raison de l'étape « relire les captures ».
 - **Espaces insécables.** Le test attendait `2 000 000`, mais `Intl.NumberFormat('fr-FR')` insère des espaces fines insécables (U+202F). Le test a été corrigé, et l'export CSV remplace ces espaces, qui s'affichent mal dans certains Excel.
 - **Test de bout en bout faux, application juste.** Le test cliquait « 5 » pour modifier une note, mais l'IA avait déjà proposé 5 : aucune modification. J'ai vérifié que le comportement de l'application était voulu avant de corriger le test, et pas l'inverse.
 
 ## 4. Fiabilisation
 
-**72 tests unitaires** (Vitest) sur la logique qui compte :
+**80 tests unitaires** (Vitest) sur la logique qui compte :
 - **Import** ([`import.test.ts`](src/domain/import.test.ts)) : encodages UTF-8 et Windows-1252, BOM, séparateur, en-têtes avec accents, champs sur plusieurs lignes, lignes vides, identifiants manquants ou en double, harmonisation des directions et thèmes, 7 formats de date, 15 formats de budget, messages d'erreur.
 - **Notation** ([`scoring.test.ts`](src/domain/scoring.test.ts)) : refus d'une réponse de modèle invalide (note hors grille ou décimale, critère manquant, texte libre), priorité de la note de Camille, moyenne pondérée, simulation déterministe et cohérente, **aucun nom dans le prompt**, règles de la shortlist (départage, doublons exclus, ajout forcé sans dépasser la taille).
-- **Doublons** ([`duplicates.test.ts`](src/domain/duplicates.test.ts)) : idées reformulées rapprochées, idées sans rapport séparées, mots communs explicatifs, regroupement transitif.
+- **Doublons** ([`duplicates.test.ts`](src/domain/duplicates.test.ts)) : idées reformulées rapprochées (synonymes compris), idées sans rapport séparées, idée déposée deux fois marquée « identique », mots communs explicatifs, regroupement transitif.
 - **Export** ([`export.test.ts`](src/domain/export.test.ts)) : le fichier se relit, les notes exportées sont celles de Camille, l'anonymisation ne laisse aucun nom, **les formules Excel sont neutralisées** (le texte vient des salariés et le fichier part chez le client).
 - **État et serveur** : une proposition n'écrase jamais une note saisie, un doublon peut être annulé, `/api/score` répond 503 sans clé.
+
+**Vérifié sur l'export réel** (40 idées) : 40 importées sans erreur, 4 points signalés (2 thèmes vides, 1 site vide, 1 idée en anglais), 2 formats de date lus. Doublons repérés :
+
+| Paire | Score | Verdict attendu |
+|---|---|---|
+| IDEA-002 / IDEA-014 | identiques | même auteur, déposée deux fois |
+| IDEA-003 / IDEA-019 | 0,66 | assistant RH / chatbot RH |
+| IDEA-017 / IDEA-018 | 0,46 | rapport dicté par IA / dictée des comptes rendus |
+| IDEA-008 / IDEA-027 | 0,38 | covoiturage domicile-travail / inter-sites : **proches mais différentes**, à trancher par Camille |
+| IDEA-001 / IDEA-007 | 0,34 | capteurs sur les compresseurs / maintenance prédictive des compresseurs |
+
+Le premier faux positif arrive à 0,21 : le seuil est fixé à **0,30**. Toutes les paires plausibles sont repérées, sans bruit.
 
 **1 test de bout en bout** (Playwright, [`e2e/parcours.spec.ts`](e2e/parcours.spec.ts)) : le parcours complet de Camille dans Chromium, y compris la persistance après rechargement.
 
@@ -120,7 +135,7 @@ Navigateur (React)                                   Vercel
 1. Valider avec elle la grille, les poids et surtout les **axes stratégiques d'Hexavia**. La simulation donne une première lecture cohérente, pas un jugement : un vrai modèle sera plus fin.
 2. Avant d'activer le vrai modèle, **protéger `/api/score`** (accès authentifié, limite d'appels) : en l'état, quiconque a l'URL consommerait la clé.
 3. Prévenir que les données vivent dans **son navigateur** : changer d'ordinateur ou vider l'historique les efface. Prévoir une sauvegarde ou une base partagée.
-4. Tester sur le vrai export complet et ajuster le seuil des doublons (0,30) si besoin.
+4. Revoir le seuil des doublons (0,30) sur l'export du prochain client : il a été réglé sur 40 idées seulement.
 
 ## 6. Journal
 
@@ -135,7 +150,10 @@ Navigateur (React)                                   Vercel
 | 01:52 | IA branchable : fonction serveur, état persistant |
 | 01:58 | Interface complète, test de bout en bout, relecture sur captures (bureau, mobile, impression) |
 | 01:59 | CI, configuration Vercel, tests de la fonction serveur |
-| 02:05 | README, mise en ligne |
+| 02:05 | README |
+| 02:07 | Réception de l'export réel : analyse de l'import, des doublons et du classement |
+| 02:08 | Corrections révélées par la vraie donnée (mots-clés, synonymes, idées identiques, signalements), +8 tests |
+| 02:10 | Captures sur l'export réel, mise en ligne |
 
 ## 7. Suite et questions pour Camille
 
@@ -148,7 +166,8 @@ Navigateur (React)                                   Vercel
 **Questions pour Camille :**
 1. Quelles sont les priorités stratégiques d'Hexavia ? Un critère compte-t-il plus que les autres ?
 2. Le jury doit-il voir le nom des auteurs, ou noter à l'aveugle ?
-3. Quand deux idées sont des doublons, fusionne-t-on les auteurs (co-porteurs) ou garde-t-on la première déposée ?
-4. Sous quelle forme le client veut-il la shortlist : PDF, Excel, présentation ? Avec quelles informations ?
-5. Seras-tu seule à noter, ou d'autres consultants (ou le client) noteront-ils aussi ?
-6. Le client accepte-t-il que les idées passent par un modèle d'IA externe, même sans les noms ?
+3. Le covoiturage domicile-travail (IDEA-008) et le covoiturage inter-sites (IDEA-027) : une seule idée à fusionner, ou deux ?
+4. Quand deux idées sont des doublons, fusionne-t-on les auteurs (co-porteurs) ou garde-t-on la première déposée ?
+5. Sous quelle forme le client veut-il la shortlist : PDF, Excel, présentation ? Avec quelles informations ?
+6. Seras-tu seule à noter, ou d'autres consultants (ou le client) noteront-ils aussi ?
+7. Le client accepte-t-il que les idées passent par un modèle d'IA externe, même sans les noms ?
